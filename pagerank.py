@@ -15,10 +15,10 @@ def main():
     print(f"PageRank Results from Sampling (n = {SAMPLES})")
     for page in sorted(ranks):
         print(f"  {page}: {ranks[page]:.4f}")
-    ranks = iterate_pagerank(corpus, DAMPING)
-    print(f"PageRank Results from Iteration")
-    for page in sorted(ranks):
-        print(f"  {page}: {ranks[page]:.4f}")
+    # ranks = iterate_pagerank(corpus, DAMPING)
+    # print(f"PageRank Results from Iteration")
+    # for page in sorted(ranks):
+    #     print(f"  {page}: {ranks[page]:.4f}")
 
 
 def crawl(directory):
@@ -70,7 +70,6 @@ def transition_model(corpus, page, damping_factor):
     for p in corpus.keys():
         prob_dist[p] += (1 - damping_factor)/len(corpus)
 
-
     return prob_dist
 
 
@@ -89,12 +88,17 @@ def sample_pagerank(corpus, damping_factor, n):
         for var in corpus.keys()
     }
 
-    rand = random.randint(0,len(corpus))
-    page = corpus[corpus.keys()[rand]] # Take the first page randomly
-    transition_model(corpus,page,damping_factor) # Initialize a transition model
-    
-    # for sample in range(n):
-        
+    rand = random.randint(0,len(corpus)-1)
+    page = list(corpus.keys())[rand] # Take the first page randomly
+    prob_dist = transition_model(corpus,page,damping_factor) # Initialize a transition model
+    pagerank[page] += 1
+    for sample in range(n):
+        page = random.choices(list(prob_dist.keys()), weights=[round(val*100, 6) for val in prob_dist.values()], k=1)[0]
+        prob_dist = transition_model(corpus,page,damping_factor)
+        pagerank[page] += 1
+
+    for p in pagerank:
+        pagerank[p] /= n
 
     return pagerank 
 
