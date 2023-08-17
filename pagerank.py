@@ -2,6 +2,7 @@ import os
 import random
 import re
 import sys
+import copy
 
 DAMPING = 0.85
 SAMPLES = 10000
@@ -15,10 +16,10 @@ def main():
     print(f"PageRank Results from Sampling (n = {SAMPLES})")
     for page in sorted(ranks):
         print(f"  {page}: {ranks[page]:.4f}")
-    # ranks = iterate_pagerank(corpus, DAMPING)
-    # print(f"PageRank Results from Iteration")
-    # for page in sorted(ranks):
-    #     print(f"  {page}: {ranks[page]:.4f}")
+    ranks = iterate_pagerank(corpus, DAMPING)
+    print(f"PageRank Results from Iteration")
+    for page in sorted(ranks):
+        print(f"  {page}: {ranks[page]:.4f}")
 
 
 def crawl(directory):
@@ -103,6 +104,13 @@ def sample_pagerank(corpus, damping_factor, n):
     return pagerank 
 
 
+def numlinks(page,corpus):
+    counter = 0
+    for p in corpus:
+        if page in corpus[p]:
+            counter += 1
+    return counter 
+
 def iterate_pagerank(corpus, damping_factor):
     """
     Return PageRank values for each page by iteratively updating
@@ -112,8 +120,25 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
+    rank = 1/len(corpus)
+    pagerank  = {
+        var: rank
+        for var in corpus.keys()
+    }
 
-    return None
+    repeat = True
+    while repeat:
+        tmpPagerank = copy.deepcopy(pagerank)
+        for page in pagerank.keys():
+            pagerank[page] = (1-damping_factor)/len(corpus) 
+            sum = 0
+            for link in corpus[page]:
+                sum += pagerank[link] / numlinks(link,corpus)
+            pagerank[page] += damping_factor*sum
+       
+        repeat = any(abs(tmpPagerank[page] - pagerank[page]) >= 0.001 for page in pagerank.keys())
+    
+    return pagerank
 
 
 if __name__ == "__main__":
