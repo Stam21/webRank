@@ -2,7 +2,7 @@ import os
 import random
 import re
 import sys
-import copy
+import math
 
 DAMPING = 0.85
 SAMPLES = 10000
@@ -104,13 +104,6 @@ def sample_pagerank(corpus, damping_factor, n):
     return pagerank 
 
 
-def numlinks(page,corpus):
-    counter = 0
-    for p in corpus:
-        if page in corpus[p]:
-            counter += 1
-    return counter 
-
 def iterate_pagerank(corpus, damping_factor):
     """
     Return PageRank values for each page by iteratively updating
@@ -120,24 +113,38 @@ def iterate_pagerank(corpus, damping_factor):
     their estimated PageRank value (a value between 0 and 1). All
     PageRank values should sum to 1.
     """
-    rank = 1/len(corpus)
-    pagerank  = {
-        var: rank
-        for var in corpus.keys()
-    }
+    N = len(corpus)
+    initial_rank = 1 / N
+    pagerank = {page: initial_rank for page in corpus.keys()}
+    updated_pagerank = {page: 0 for page in corpus.keys()}
 
     repeat = True
     while repeat:
-        tmpPagerank = copy.deepcopy(pagerank)
+        repeat = False
         for page in pagerank.keys():
-            pagerank[page] = (1-damping_factor)/len(corpus) 
-            sum = 0
-            for link in corpus[page]:
-                sum += pagerank[link] / numlinks(link,corpus)
-            pagerank[page] += damping_factor*sum
-       
-        repeat = any(abs(tmpPagerank[page] - pagerank[page]) >= 0.001 for page in pagerank.keys())
-    
+            total_contribution = 0
+            for linking_page, linked_pages in corpus.items():
+                num_links = len(linked_pages)
+                if num_links == 0:
+                    num_links = N
+                if page in linked_pages:
+                    total_contribution += pagerank[linking_page] / num_links
+            
+            new_rank = (1 - damping_factor) / N + damping_factor * total_contribution
+            new_rank = round(new_rank, 4)  # Round after calculations
+            
+            # Stop iteration when the values changed no more than 0.001
+            if round(abs(new_rank - pagerank[page]),4) > 0.001:
+                repeat = True
+
+            updated_pagerank[page] = new_rank
+
+        # Normalize ranks to sum to 1
+        for page in updated_pagerank.keys():
+            updated_pagerank[page] = math.floor(updated_pagerank[page]*10000)/10000
+        
+        pagerank = updated_pagerank.copy()
+
     return pagerank
 
 
